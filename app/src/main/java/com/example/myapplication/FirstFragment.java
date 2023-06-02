@@ -1,5 +1,7 @@
 package com.example.myapplication;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
@@ -12,6 +14,7 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.LineHeightSpan;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +30,25 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.myapplication.databinding.FragmentFirstBinding;
 import android.graphics.Paint;
 import android.text.style.LineHeightSpan;
+
+@SuppressLint("AppCompatCustomView")
+class TestEditText extends EditText {
+    public TestEditText(Context context) {
+        super(context);
+    }
+
+    public TestEditText(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public TestEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+    }
+
+    public TestEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+    }
+}
 
 /**
  * We use a custom {@link LineHeightSpan}, because `lineSpacingExtra` is broken. Details here:
@@ -103,7 +125,7 @@ public class FirstFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        EditText inputText = (EditText) view.findViewById(R.id.edit_text);
+        TestEditText inputText = (TestEditText) view.findViewById(R.id.edit_text);
         String LOREM_IPSUM = "L";
         SpannableString string = new SpannableString(LOREM_IPSUM);
         inputText.setText(string, TextView.BufferType.SPANNABLE);
