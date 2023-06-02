@@ -25,50 +25,64 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.myapplication.databinding.FragmentFirstBinding;
+import android.graphics.Paint;
+import android.text.style.LineHeightSpan;
 
+/**
+ * We use a custom {@link LineHeightSpan}, because `lineSpacingExtra` is broken. Details here:
+ * https://github.com/facebook/react-native/issues/7546
+ */
 class CustomLineHeightSpan implements LineHeightSpan {
     private final int mHeight;
-    private final int mStartIndex;
-    private final int mEndIndex;
+    private boolean mAlign;
 
-    CustomLineHeightSpan(
-            int lineHeight,
-            int startIndex,
-            int endIndex
-    ) {
-        mHeight = lineHeight;
-        mStartIndex = startIndex;
-        mEndIndex = endIndex;
+    public CustomLineHeightSpan(float height) {
+        this.mHeight = (int) Math.ceil(height);
     }
-    public int getHeight() {
+
+    public CustomLineHeightSpan(float height, boolean align) {
+        this.mHeight = (int) Math.ceil(height);
+        this.mAlign = align;
+    }
+
+    public int getLineHeight() {
         return mHeight;
     }
 
     @Override
-    public void chooseHeight(@NonNull CharSequence text, int start, int end,
-                             int spanstartv, int lineHeight,
-                             @NonNull Paint.FontMetricsInt fm) {
+    public void chooseHeight(
+            CharSequence text, int start, int end, int spanstartv, int v, Paint.FontMetricsInt fm) {
+        // This is more complicated that I wanted it to be. You can find a good explanation of what the
+        // FontMetrics mean here: http://stackoverflow.com/questions/27631736.
+        // The general solution is that if there's not enough height to show the full line height, we
+        // will prioritize in this order: descent, ascent, bottom, top
 
-        int currentHeight = fm.descent - fm.ascent;
-        // If current height is not positive, do nothing.
-        if (currentHeight <= 0) return;
+        if (fm.descent > mHeight) {
+            // Show as much descent as possible
+            fm.bottom = fm.descent = Math.min(mHeight, fm.descent);
+            fm.top = fm.ascent = 0;
+        } else if (-fm.ascent + fm.descent > mHeight) {
+            // Show all descent, and as much ascent as possible
+            fm.bottom = fm.descent;
+            fm.top = fm.ascent = -mHeight + fm.descent;
+        } else if (-fm.ascent + fm.bottom > mHeight) {
+            // Show all ascent, descent, as much bottom as possible
+            fm.top = fm.ascent;
+            fm.bottom = fm.ascent + mHeight;
+        } else if (-fm.top + fm.bottom > mHeight) {
+            // Show all ascent, descent, bottom, as much top as possible
+            fm.top = fm.bottom - mHeight;
+        } else {
+            // Show proportionally additional ascent / top & descent / bottom
+            final int additional = mHeight - (-fm.top + fm.bottom);
 
-        boolean isFirstLine = (start == mStartIndex);
-        boolean isLastLine = (end == mEndIndex);
-
-        // if single line and should not apply, return
-        // if (isFirstLine && isLastLine && trimFirstLineTop && trimLastLineBottom) return
-
-        // if (isFirstLine) calculateTargetMetrics(fm);
-
-       if (isFirstLine) {
-           fm.ascent = -144;
-           fm.descent = 8;
-       }
-       /*if (isLastLine) {
-           fm.descent = -144;
-           fm.ascent = 8;
-       }*/
+            // Round up for the negative values and down for the positive values  (arbitrary choice)
+            // So that bottom - top equals additional even if it's an odd number.
+            fm.top -= Math.ceil(additional / 2.0f);
+            fm.bottom += Math.floor(additional / 2.0f);
+            fm.ascent = fm.top;
+            fm.descent = fm.bottom;
+        }
     }
 }
 
@@ -89,20 +103,12 @@ public class FirstFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        TextView inputText = (TextView) view.findViewById(R.id.edit_text);
-        inputText.setGravity(Gravity.CENTER_VERTICAL);
-        // SpannableString string = new SpannableString("\n");
-        // string.setSpan(new LineHeightSpan.Standard(800), 0, string.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-        String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing "
-                + "elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad "
-                + "minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea "
-                + "commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse "
-                + "cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
-                + "proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        EditText inputText = (EditText) view.findViewById(R.id.edit_text);
+        String LOREM_IPSUM = "L";
         SpannableString string = new SpannableString(LOREM_IPSUM);
         inputText.setText(string, TextView.BufferType.SPANNABLE);
         Spannable span = (Spannable)inputText.getText();
-        // span.setSpan(new LineHeightSpan.Standard(200), 0, string.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        span.setSpan(new CustomLineHeightSpan(300), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
     }
 
     @Override
