@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".FirstFragment">
 
-    <TestEditText
+    <com.example.myapplication.TestEditText
         android:id="@+id/edit_text"
         android:background="#ffff99"
         android:lineHeight="100px"
