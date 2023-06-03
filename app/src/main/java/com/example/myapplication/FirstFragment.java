@@ -106,13 +106,6 @@ public class FirstFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        /* CustomEditText inputText = (CustomEditText) view.findViewById(R.id.edit_text);
-        String LOREM_IPSUM = "L";
-        SpannableString string = new SpannableString(LOREM_IPSUM);
-        inputText.setText(string, TextView.BufferType.SPANNABLE);
-        */
-        // Spannable span = (Spannable)inputText.getText();
-        // span.setSpan(new CustomLineHeightSpan(100), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
     }
 
     @Override
