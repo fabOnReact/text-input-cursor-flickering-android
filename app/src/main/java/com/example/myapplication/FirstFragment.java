@@ -110,8 +110,8 @@ public class FirstFragment extends Fragment {
         String LOREM_IPSUM = "L";
         SpannableString string = new SpannableString(LOREM_IPSUM);
         inputText.setText(string, TextView.BufferType.SPANNABLE);
-        Spannable span = (Spannable)inputText.getText();
-        span.setSpan(new CustomLineHeightSpan(300), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        // Spannable span = (Spannable)inputText.getText();
+        // span.setSpan(new CustomLineHeightSpan(100), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
     }
 
     @Override
