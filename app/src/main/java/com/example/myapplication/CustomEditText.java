@@ -49,7 +49,7 @@ public class CustomEditText extends EditText {
         mUpdatingText = false;
     }
 
-    private void updateCachedSpannable(CharSequence s) {
+    private void maybeSetText(CharSequence s) {
         Spannable span = (Spannable)getText();
         if (s.length() == 0) {
             setInitialState();
@@ -71,7 +71,7 @@ public class CustomEditText extends EditText {
             Log.w(
                     TAG, "onTextChanged ==> s: " + s + " start: " + start + " before: " + before + " count: " + count);
             if (!mUpdatingText) {
-                updateCachedSpannable(s);
+                maybeSetText(s);
             }
         }
 
