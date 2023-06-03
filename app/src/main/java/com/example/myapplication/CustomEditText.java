@@ -14,46 +14,48 @@ import android.widget.TextView;
 
 
 @SuppressLint("AppCompatCustomView")
-public class TestEditText extends EditText {
-    private static final String TAG = "TestEditText";
-    private String mInternalValue;
+public class CustomEditText extends EditText {
+    private static final String TAG = "CustomEditText";
     private boolean mUpdatingText;
 
-    public TestEditText(Context context) {
+    public CustomEditText(Context context) {
         super(context);
         addTextChangedListener(new TextWatcherDelegator());
+        setInitialState();
     }
 
-    public TestEditText(Context context, AttributeSet attrs) {
+    public CustomEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
         addTextChangedListener(new TextWatcherDelegator());
+        setInitialState();
     }
 
-    public TestEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CustomEditText(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         addTextChangedListener(new TextWatcherDelegator());
+        setInitialState();
     }
 
-    public TestEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public CustomEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         addTextChangedListener(new TextWatcherDelegator());
+        setInitialState();
+    }
+    private void setInitialState() {
+        mUpdatingText = true;
+        SpannableString string = new SpannableString("\u200b");
+        string.setSpan(new CustomLineHeightSpan(300), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        setText(string, TextView.BufferType.SPANNABLE);
+        mUpdatingText = false;
     }
 
     private void updateCachedSpannable(CharSequence s) {
-        mInternalValue = s + " Updated";
-        Log.w(TAG, "updatedCachedSpannable ==> mInternalValue: " + mInternalValue);
         Spannable span = (Spannable)getText();
-        span.setSpan(new CustomLineHeightSpan(300), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         if (s.length() == 0) {
-            mUpdatingText = true;
-            Log.e(TAG, "updatedCachedSpannable ==> s.length(): " + s.length());
-            SpannableString string = new SpannableString("\u200b");
-            string.setSpan(new CustomLineHeightSpan(300), 0, string.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-            setText(string, TextView.BufferType.SPANNABLE);
-            invalidate();
-            requestLayout();
+            setInitialState();
+        } else {
+            span.setSpan(new CustomLineHeightSpan(300), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         }
-        mUpdatingText = false;
     }
 
         private class TextWatcherDelegator implements TextWatcher {
