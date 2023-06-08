@@ -12,6 +12,7 @@ import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 @SuppressLint("AppCompatCustomView")
 public class MongolTextView extends EditText {
 
+    private static final String TAG = "MongolTextView";
     private TextPaint textPaint;
     private Paint cursorPaint = new Paint();
     private boolean mCursorIsVisible;
@@ -31,7 +33,7 @@ public class MongolTextView extends EditText {
     private float mCursorAscentY; // This is a negative number
     private float mCursorX;
 
-    private static final float CURSOR_THICKNESS = 2f;
+    private static final float CURSOR_THICKNESS = 10f;
     private int mCursorHeightY;
 
     // Constructors
@@ -80,55 +82,37 @@ public class MongolTextView extends EditText {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // swap the height and width
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        super.onMeasure(widthMeasureSpec, 357);
         setMeasuredDimension(getMeasuredWidth(), 357);
         // setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        // super.onDraw(canvas);
-        textPaint = getPaint();
-        textPaint.setColor(getCurrentTextColor());
-        textPaint.drawableState = getDrawableState();
+        if (getText().length() == 0) {
+            textPaint = getPaint();
+            textPaint.setColor(getCurrentTextColor());
+            textPaint.drawableState = getDrawableState();
 
-        canvas.save();
+            canvas.save();
 
-        // canvas.translate(0,  500);
+            // canvas.translate(0,  500);
 
-        // draw the cursor
-        if (mCursorIsVisible) {
-            setCursorLocation(1);
-            canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
-                    cursorPaint);
-        }
+            // draw the cursor
+            if (mCursorIsVisible) {
+                setCursorLocation(getText().length());
+                //  canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
+                //    cursorPaint);
+                // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f,
+                //       cursorPaint);
+                canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f, cursorPaint);
+            }
 
-        // here create a copy of the layout
-        // add a span
-        // and draw on that layout
-        Layout newLayout;
-        if (getText().length() < 2) {
-             newLayout = new StaticLayout("\u200b",
-                    textPaint,
-                    getLayout().getWidth(),
-                    Layout.Alignment.ALIGN_NORMAL,
-                    1.0f,
-                    0,
-                    false);
+            getLayout().draw(canvas);
+            canvas.restore();
         } else {
-             newLayout = new StaticLayout(getText(),
-                    textPaint,
-                    getLayout().getWidth(),
-                    Layout.Alignment.ALIGN_NORMAL,
-                    1.0f,
-                    0,
-                    false);
+            super.onDraw(canvas);
         }
-        newLayout.draw(canvas);
-
-        // getLayout().draw(canvas);
-
-        canvas.restore();
     }
 
     public void showCursor(boolean visible) {
@@ -156,6 +140,11 @@ public class MongolTextView extends EditText {
                 mCursorBaseY = layout.getLineBaseline(line);
                 mCursorBottomY = layout.getLineBottom(line);
                 mCursorAscentY = layout.getLineAscent(line);
+                Log.w(TAG,
+                        "mCursorX: " + mCursorX
+                                + " mCursorBaseY: " + mCursorBaseY
+                                + " mCursorBottomY: " + mCursorBottomY
+                                + " mCursorAscentY: " + mCursorAscentY);
 
                 this.invalidate();
             } catch (Exception e) {
@@ -174,7 +163,7 @@ public class MongolTextView extends EditText {
             // swapping x and y for touch events
             int y = (int) event.getX();
             int x = (int) event.getY();
-
+            setCursorLocation(getText().length());
             if (layout != null) {
 
                 int line = layout.getLineForVertical(y);
