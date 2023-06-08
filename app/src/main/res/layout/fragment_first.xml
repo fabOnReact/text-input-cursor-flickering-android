@@ -10,7 +10,7 @@
     <com.example.myapplication.MongolTextView
         android:text=""
         android:id="@+id/edit_text"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         android:layout_width="fill_parent"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>

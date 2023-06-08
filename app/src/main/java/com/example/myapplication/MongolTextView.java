@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.text.Layout;
 import android.text.Spannable;
@@ -89,32 +90,73 @@ public class MongolTextView extends EditText {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (getText().length() == 0) {
-            textPaint = getPaint();
-            textPaint.setColor(getCurrentTextColor());
-            textPaint.drawableState = getDrawableState();
+        textPaint = getPaint();
+        textPaint.setColor(getCurrentTextColor());
+        textPaint.drawableState = getDrawableState();
 
-            canvas.save();
-
+        canvas.save();
+        // if (getText().length() < 4) {
             // canvas.translate(0,  500);
 
             // draw the cursor
             if (mCursorIsVisible) {
                 setCursorLocation(getText().length());
-                //  canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
-                //    cursorPaint);
+                canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
+                  cursorPaint);
                 // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f,
                 //       cursorPaint);
                 // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f, cursorPaint);
-                canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
+                // canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
+                // canvas.drawRect(getCursorPath(2), cursorPaint);
             }
 
-            getLayout().draw(canvas);
-            canvas.restore();
-        } else {
-            super.onDraw(canvas);
-        }
+        // } else {
+            // super.onDraw(canvas);
+            //canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
+        // }
+
+        getLayout().draw(canvas);
+        canvas.restore();
     }
+
+  /*
+    private Rect getCursorPath(int cursorLocation) {
+        int line = getLayout().getLineForOffset(cursorLocation);
+        int width = getLayout().getLineDescent(line) - getLayout().getLineAscent(line);
+        int x = getLayout().getLineBottom(line) + getPaddingLeft();
+        int y = (int) getLayout().getVertical(cursorLocation) + getPaddingTop();
+
+        int cursorWidthPX = (int) (CURSOR_THICKNESS * getResources().getDisplayMetrics().density);
+        return new Rect(x, y, x + width, y + cursorWidthPX);
+    }
+
+
+    public int getLineForOffset(int offset) {
+        int high = getLineCount();
+        int low = -1;
+        int guess;
+
+        while (high - low > 1) {
+            guess = (high + low) / 2;
+
+            if (getLineStart(guess) > offset)
+                high = guess;
+            else
+                low = guess;
+        }
+
+        if (low < 0)
+            return 0;
+        else
+            return low;
+    }
+
+
+    public final int getLineStart(int line) {
+        if (mLinesInfo == null || mLinesInfo.size() == 0) return 0;
+        return mLinesInfo.get(line).startOffset;
+    }
+     */
 
     public void showCursor(boolean visible) {
         mCursorIsVisible = visible;
@@ -135,19 +177,20 @@ public class MongolTextView extends EditText {
             try {
                 // This method is giving a lot of crashes so just surrounding with
                 // try catch for now
-
-                int line = layout.getLineForOffset(characterOffset);
                 mCursorX = layout.getPrimaryHorizontal(characterOffset);
-                mCursorBaseY = layout.getLineBaseline(line);
-                mCursorBottomY = layout.getLineBottom(line);
-                mCursorAscentY = layout.getLineAscent(line);
-                Log.w(TAG,
-                        "mCursorX: " + mCursorX
-                                + " mCursorBaseY: " + mCursorBaseY
-                                + " mCursorBottomY: " + mCursorBottomY
-                                + " mCursorAscentY: " + mCursorAscentY);
+                if (getText().length() > 0) {
+                    int line = layout.getLineForOffset(characterOffset);
+                    mCursorBaseY = layout.getLineBaseline(line);
+                    mCursorBottomY = layout.getLineBottom(line);
+                    mCursorAscentY = layout.getLineAscent(line);
+                    Log.w(TAG,
+                            "mCursorX: " + mCursorX
+                                    + " mCursorBaseY: " + mCursorBaseY
+                                    + " mCursorBottomY: " + mCursorBottomY
+                                    + " mCursorAscentY: " + mCursorAscentY);
 
-                this.invalidate();
+                    this.invalidate();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -167,27 +210,34 @@ public class MongolTextView extends EditText {
             setCursorLocation(getText().length());
             if (layout != null) {
 
-                int line = layout.getLineForVertical(y);
-                int offset = layout.getOffsetForHorizontal(line, x);
+                if (getText().length() != 0) {
+                    int line = layout.getLineForVertical(y);
+                    int offset = layout.getOffsetForHorizontal(line, x);
 
-                mCursorX = layout.getPrimaryHorizontal(offset);
-                mCursorBaseY = layout.getLineBaseline(line);
-                mCursorBottomY = layout.getLineBottom(line);
-                mCursorAscentY = layout.getLineAscent(line);
-                mCursorHeightY = layout.getLineTop(line);
+                    mCursorX = layout.getPrimaryHorizontal(offset);
+                    mCursorBaseY = layout.getLineBaseline(line);
+                    mCursorBottomY = layout.getLineBottom(line);
+                    mCursorAscentY = layout.getLineAscent(line);
+                    mCursorHeightY = layout.getLineTop(line);
+                    Log.w(TAG, "mCursorX: " + mCursorX +
+                            " mCursorBaseY: " + mCursorBaseY +
+                            " mCursorBottomY: " + mCursorBottomY +
+                            " mCursorAscentY: " + mCursorAscentY + " mCursorHeightY: " + mCursorHeightY);
 
-                view.invalidate();
 
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        //handler.postDelayed(mLongPressed, 1000);
-                        listener.onCursorTouchLocationChanged(offset);
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        //handler.removeCallbacks(mLongPressed);
-                        // notify the host activity of the new cursor location
+                    view.invalidate();
 
-                        break;
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            //handler.postDelayed(mLongPressed, 1000);
+                            listener.onCursorTouchLocationChanged(offset);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                            //handler.removeCallbacks(mLongPressed);
+                            // notify the host activity of the new cursor location
+
+                            break;
+                    }
                 }
 
             }
