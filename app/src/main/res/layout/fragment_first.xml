@@ -8,7 +8,7 @@
     tools:context=".FirstFragment">
 
     <com.example.myapplication.MongolTextView
-        android:text="Hello my friend this is your text"
+        android:text="Hello"
         android:id="@+id/edit_text"
         android:layout_height="wrap_content"
         android:layout_width="fill_parent"

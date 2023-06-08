@@ -81,7 +81,8 @@ public class MongolTextView extends EditText {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // swap the height and width
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+        setMeasuredDimension(getMeasuredWidth(), 357);
+        // setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
     }
 
     @Override
@@ -97,7 +98,7 @@ public class MongolTextView extends EditText {
 
         // draw the cursor
         if (mCursorIsVisible) {
-            setCursorLocation(7);
+            setCursorLocation(1);
             canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
                     cursorPaint);
         }
@@ -105,8 +106,27 @@ public class MongolTextView extends EditText {
         // here create a copy of the layout
         // add a span
         // and draw on that layout
-        Layout newLayout = new StaticLayout(getText(), textPaint, getLayout().getWidth(), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+        Layout newLayout;
+        if (getText().length() < 2) {
+             newLayout = new StaticLayout("\u200b",
+                    textPaint,
+                    getLayout().getWidth(),
+                    Layout.Alignment.ALIGN_NORMAL,
+                    1.0f,
+                    0,
+                    false);
+        } else {
+             newLayout = new StaticLayout(getText(),
+                    textPaint,
+                    getLayout().getWidth(),
+                    Layout.Alignment.ALIGN_NORMAL,
+                    1.0f,
+                    0,
+                    false);
+        }
         newLayout.draw(canvas);
+
+        // getLayout().draw(canvas);
 
         canvas.restore();
     }
