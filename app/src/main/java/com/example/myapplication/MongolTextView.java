@@ -33,7 +33,7 @@ public class MongolTextView extends EditText {
     private float mCursorAscentY; // This is a negative number
     private float mCursorX;
 
-    private static final float CURSOR_THICKNESS = 10f;
+    private static final float CURSOR_THICKNESS = 5f;
     private int mCursorHeightY;
 
     // Constructors
@@ -61,7 +61,7 @@ public class MongolTextView extends EditText {
         this.mCursorIsVisible = true;
 
         cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
-        cursorPaint.setColor(Color.BLACK); // TODO should be same as text color
+        cursorPaint.setColor(Color.parseColor("#03DAC5")); // TODO should be same as text color
 
     }
 
@@ -105,7 +105,8 @@ public class MongolTextView extends EditText {
                 //    cursorPaint);
                 // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f,
                 //       cursorPaint);
-                canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f, cursorPaint);
+                // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f, cursorPaint);
+                canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
             }
 
             getLayout().draw(canvas);
