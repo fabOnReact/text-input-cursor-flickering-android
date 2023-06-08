@@ -7,10 +7,10 @@
     android:layout_height="match_parent"
     tools:context=".FirstFragment">
 
-    <com.example.myapplication.CustomEditText
+    <com.example.myapplication.MongolTextView
+        android:text="Hello my friend this is your text"
         android:id="@+id/edit_text"
-        android:background="#ffff99"
-        android:lineHeight="100px"
-        android:layout_height="fill_parent"
-        android:layout_width="fill_parent"/>
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        />
 </androidx.constraintlayout.widget.ConstraintLayout>
