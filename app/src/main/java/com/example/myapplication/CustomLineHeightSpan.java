@@ -27,7 +27,6 @@ public class CustomLineHeightSpan implements LineHeightSpan {
         // The general solution is that if there's not enough height to show the full line height, we
         // will prioritize in this order: descent, ascent, bottom, top
 
-/*
         if (fm.descent > mHeight) {
             // Show as much descent as possible
             fm.bottom = fm.descent = Math.min(mHeight, fm.descent);
@@ -54,6 +53,5 @@ public class CustomLineHeightSpan implements LineHeightSpan {
             fm.ascent = fm.top;
             fm.descent = fm.bottom;
         }
-*/
     }
 }

@@ -150,9 +150,11 @@ public class MongolTextView extends EditText {
     } else if (blinkShouldBeOn()) {
       setCursorVisible(false);
 
-      int lineHeight = 357;
+      int lineHeight = 300;
+      int viewHeight = 357;
+      int padding = (viewHeight - lineHeight) / 2;
       setCursorLocation(getText().length());
-      canvas.drawLine(mCursorX, 0, mCursorX, lineHeight, cursorPaint);
+      canvas.drawLine(mCursorX, padding, mCursorX, viewHeight - padding, cursorPaint);
     }
     canvas.restore();
   }
