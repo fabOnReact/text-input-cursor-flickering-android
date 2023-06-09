@@ -100,11 +100,13 @@ public class CustomEditText extends EditText {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
-        // we implement the same solution from jetpack compose https://tinyurl.com/mtmev3nj and https://tinyurl.com/43vx2pr2
-        // we measure a dummy string with a zero-width-character because StaticLayout.generate does not
-        // measure LineHeightSpan in empty strings
+        // I will complete this later. This implementation is just for testing the cursor flickering
         if (getText().length() == 0 && LINE_HEIGHT != 0) {
+            // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
+            // we implement the same solution from jetpack compose https://tinyurl.com/mtmev3nj and https://tinyurl.com/43vx2pr2
+            // we measure a dummy string with a zero-width-character because StaticLayout.generate does not
+            // measure LineHeightSpan in empty strings
+
             // use react-native API to retrieve effectiveLineHeight
             int effectiveLineHeight = LINE_HEIGHT;
             Spannable dummyString = new SpannableString("\u200B");
