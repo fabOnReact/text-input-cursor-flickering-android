@@ -10,8 +10,9 @@
     <com.example.myapplication.MongolTextView
         android:text=""
         android:id="@+id/edit_text"
-        android:layout_height="fill_parent"
+        android:layout_height="wrap_content"
         android:layout_width="fill_parent"
+        android:background="#ffff99"
         android:textSelectHandle="@android:color/holo_blue_light"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>
