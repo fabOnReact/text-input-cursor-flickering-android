@@ -44,6 +44,7 @@ public class MongolTextView extends EditText {
   private long mShowCursor;
   private Blink mBlink;
   private int BLINK = 500;
+  private float LINE_HEIGHT = 300;
 
   // Constructors
   public MongolTextView(Context context, AttributeSet attrs, int defStyle) {
@@ -68,12 +69,13 @@ public class MongolTextView extends EditText {
   private void init() {
 
     Spannable span = (Spannable) getText();
-    span.setSpan(new CustomLineHeightSpan(300), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+    span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
     setText(span, BufferType.SPANNABLE);
     this.mCursorIsVisible = true;
 
     cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
-    cursorPaint.setColor(Color.parseColor("#03DAC5")); // TODO should be same as text color
+    cursorPaint.setColor(Color.parseColor("#03DAC5"));
+    // TODO should be same as text color
     // setTextCursorDrawable(R.drawable.cursor_default);
   }
 
@@ -127,10 +129,13 @@ public class MongolTextView extends EditText {
 
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    // swap the height and width
-    super.onMeasure(widthMeasureSpec, 357);
-    setMeasuredDimension(getMeasuredWidth(), 357);
-    // setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+    if (getText().length() == 0) {
+      super.onMeasure(widthMeasureSpec, 300);
+      setMeasuredDimension(getMeasuredWidth(), 300);
+    } else {
+      super.onMeasure(widthMeasureSpec, getMeasuredHeight());
+      setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+    }
   }
 
   @Override
@@ -151,10 +156,8 @@ public class MongolTextView extends EditText {
       setCursorVisible(false);
 
       int lineHeight = 300;
-      int viewHeight = 357;
-      int padding = (viewHeight - lineHeight) / 2;
       setCursorLocation(getText().length());
-      canvas.drawLine(mCursorX, padding, mCursorX, viewHeight - padding, cursorPaint);
+      canvas.drawLine(mCursorX, 0, mCursorX, lineHeight, cursorPaint);
     }
     canvas.restore();
   }
