@@ -11,35 +11,27 @@ import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Layout;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.EditText;
-import android.widget.TextView;
 import java.lang.ref.WeakReference;
 
 @SuppressLint("AppCompatCustomView")
 public class CustomEditText extends EditText {
 
-    private static final String TAG = "MongolTextView";
+    private static final String TAG = "CustomEditText";
     private TextPaint textPaint;
     private Paint cursorPaint = new Paint();
-    private boolean mCursorIsVisible;
-    private CursorTouchLocationListener listener;
 
-    // Naming is based on pre-rotated/mirrored values
-    private float mCursorBaseY;
-    private float mCursorBottomY;
-    private float mCursorAscentY; // This is a negative number
-    private float mCursorX;
 
     private static final float CURSOR_THICKNESS = 7f;
-    private int mCursorHeightY;
     private boolean mUpdatingText = false;
+
+    // TODO - add logic to change this to true/false onFocus/onBlur
     private boolean mCursorVisible = true;
     private long mShowCursor;
     private Blink mBlink;
@@ -48,6 +40,7 @@ public class CustomEditText extends EditText {
     private int LINE_HEIGHT;
     // REACT NATIVE passes this props as cursorColor
     private String CURSOR_COLOR = "#03DAC5";
+    private boolean mCursorIsVisible;
 
     // Constructors
     public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
@@ -73,28 +66,15 @@ public class CustomEditText extends EditText {
         Spannable span = (Spannable) getText();
         span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         setText(span, BufferType.SPANNABLE);
-        this.mCursorIsVisible = true;
 
         cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
-        // TODO should be same as text color
+        // TODO should be same as the TextInput cursorColor sent from React-Native
         cursorPaint.setColor(Color.parseColor(CURSOR_COLOR));
-    }
-
-    // This interface may be deleted if touch functionality is not needed
-    public interface CursorTouchLocationListener {
-
-        /**
-         * Returns the touch location to be used for the cursor so you can update the insert location in
-         * a text string.
-         *
-         * @param glyphIndex You will need to translate glyphIndex into a Unicode index if you are using
-         *     a Unicode string.
-         */
-        public void onCursorTouchLocationChanged(int glyphIndex);
     }
 
     private void maybeSetText(CharSequence s) {
         mUpdatingText = true;
+        // do nothing for now, it is part of react-native implementation
         mUpdatingText = false;
     }
 
@@ -102,21 +82,11 @@ public class CustomEditText extends EditText {
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            Log.w(TAG, "beforeTextChanged ==> s: " + s + " start: " + start + "count: " + count);
+            // do nothing
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            Log.w(
-                    TAG,
-                    "onTextChanged ==> s: "
-                            + s
-                            + " start: "
-                            + start
-                            + " before: "
-                            + before
-                            + " count: "
-                            + count);
             if (!mUpdatingText) {
                 maybeSetText(s);
             }
@@ -124,15 +94,31 @@ public class CustomEditText extends EditText {
 
         @Override
         public void afterTextChanged(Editable s) {
-            Log.w(TAG, "afterTextChanged ==> s: " + s);
+            // do nothing
         }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (getText().length() == 0) {
-            super.onMeasure(widthMeasureSpec, LINE_HEIGHT);
-            setMeasuredDimension(getMeasuredWidth(), LINE_HEIGHT);
+        // we draw the cursor with drawLine instead of using default cursor
+        // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
+        // the solution is the same used on jetpack compose
+        // which consist of modify measure to calculate the correct height
+        // and manually drawing the cursor
+        if (getText().length() == 0 && LINE_HEIGHT != 0) {
+            // use react-native API to retrieve effectiveLineHeight
+            int effectiveLineHeight = LINE_HEIGHT;
+            // same implementation used in jetpack compose see https://tinyurl.com/mtmev3nj
+            Spannable dummyString = new SpannableString("\u200B");
+            dummyString.setSpan(new CustomLineHeightSpan(effectiveLineHeight), 0, dummyString.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+
+            Layout layout =
+                    StaticLayout.Builder.obtain(dummyString, 0, dummyString.length(), getPaint(), (int) widthMeasureSpec)
+                            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                            .setLineSpacing(0.f, 1.f)
+                            .setIncludePad(getIncludeFontPadding()).build();
+            super.onMeasure(widthMeasureSpec, layout.getHeight());
+            setMeasuredDimension(getMeasuredWidth(), layout.getHeight());
         } else {
             super.onMeasure(widthMeasureSpec, getMeasuredHeight());
             setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
@@ -146,18 +132,19 @@ public class CustomEditText extends EditText {
         Paint.FontMetricsInt fontMetricsInt = textPaint.getFontMetricsInt();
         textPaint.setColor(getCurrentTextColor());
         textPaint.drawableState = getDrawableState();
-        int fontSizeLineHeight = fontMetricsInt.descent - fontMetricsInt.ascent;
 
         canvas.save();
-        // height of the view / 2 - fontSizeLineHeight
-        // canvas.translate(0,  178 - fontSizeLineHeight);
-        if ((getText().length() > 1) || (LINE_HEIGHT == 0)) {
+        // TODO - Add logic onFocus/onBlur to remove the cursor
+        if ((getText().length() > 0) || (LINE_HEIGHT == 0)) {
             setCursorVisible(true);
         } else if (blinkShouldBeOn()) {
+            // we draw the cursor with drawLine instead of using default cursor
+            // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
+            // the solution is the same used on jetpack compose
+            // which consist of modify measure to calculate the correct height
+            // and manually drawing the cursor
             setCursorVisible(false);
-
-            setCursorLocation(getText().length());
-            canvas.drawLine(mCursorX, 0, mCursorX, LINE_HEIGHT, cursorPaint);
+            canvas.drawLine(0, 0, 0, LINE_HEIGHT, cursorPaint);
         }
         canvas.restore();
     }
@@ -165,7 +152,6 @@ public class CustomEditText extends EditText {
     public void showCursor(boolean visible) {
         mCursorIsVisible = visible;
         this.invalidate();
-        // TODO make the cursor blink
     }
 
     public void setCursorColor(int color) {
@@ -208,98 +194,6 @@ public class CustomEditText extends EditText {
 
         mBlink.removeCallbacks(mBlink);
         mBlink.postAtTime(mBlink, mShowCursor + BLINK);
-    }
-
-    public void setCursorLocation(int characterOffset) {
-
-        Layout layout = this.getLayout();
-
-        if (layout != null) {
-
-            try {
-                // This method is giving a lot of crashes so just surrounding with
-                // try catch for now
-                mCursorX = layout.getPrimaryHorizontal(characterOffset);
-                if (getText().length() > 0 && blinkShouldBeOn()) {
-                    int line = layout.getLineForOffset(characterOffset);
-                    mCursorBaseY = layout.getLineBaseline(line);
-                    mCursorBottomY = layout.getLineBottom(line);
-                    mCursorAscentY = layout.getLineAscent(line);
-                    Log.w(
-                            TAG,
-                            "mCursorX: "
-                                    + mCursorX
-                                    + " mCursorBaseY: "
-                                    + mCursorBaseY
-                                    + " mCursorBottomY: "
-                                    + mCursorBottomY
-                                    + " mCursorAscentY: "
-                                    + mCursorAscentY);
-
-                    this.invalidate();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public class InputWindowTouchListener implements OnTouchListener {
-        @Override
-        public boolean onTouch(View view, MotionEvent event) {
-
-            Layout layout = ((TextView) view).getLayout();
-
-            // swapping x and y for touch events
-            int y = (int) event.getX();
-            int x = (int) event.getY();
-            setCursorLocation(getText().length());
-            if (layout != null) {
-
-                if (getText().length() != 0) {
-                    int line = layout.getLineForVertical(y);
-                    int offset = layout.getOffsetForHorizontal(line, x);
-
-                    mCursorX = layout.getPrimaryHorizontal(offset);
-                    mCursorBaseY = layout.getLineBaseline(line);
-                    mCursorBottomY = layout.getLineBottom(line);
-                    mCursorAscentY = layout.getLineAscent(line);
-                    mCursorHeightY = layout.getLineTop(line);
-                    Log.w(
-                            TAG,
-                            "mCursorX: "
-                                    + mCursorX
-                                    + " mCursorBaseY: "
-                                    + mCursorBaseY
-                                    + " mCursorBottomY: "
-                                    + mCursorBottomY
-                                    + " mCursorAscentY: "
-                                    + mCursorAscentY
-                                    + " mCursorHeightY: "
-                                    + mCursorHeightY);
-
-                    view.invalidate();
-
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            // handler.postDelayed(mLongPressed, 1000);
-                            listener.onCursorTouchLocationChanged(offset);
-                            break;
-                        case MotionEvent.ACTION_UP:
-                            // handler.removeCallbacks(mLongPressed);
-                            // notify the host activity of the new cursor location
-
-                            break;
-                    }
-                }
-            }
-
-            return false;
-        }
-    }
-
-    public void setCursorTouchLocationListener(CursorTouchLocationListener listener) {
-        this.listener = listener;
     }
 
     private static class Blink extends Handler implements Runnable {
