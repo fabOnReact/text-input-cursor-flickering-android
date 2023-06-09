@@ -100,15 +100,13 @@ public class CustomEditText extends EditText {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // we draw the cursor with drawLine instead of using default cursor
         // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
-        // the solution is the same used on jetpack compose
-        // which consist of modify measure to calculate the correct height
-        // and manually drawing the cursor
+        // we implement the same solution from jetpack compose https://tinyurl.com/mtmev3nj and https://tinyurl.com/43vx2pr2
+        // we measure a dummy string with a zero-width-character because StaticLayout.generate does not
+        // measure LineHeightSpan in empty strings
         if (getText().length() == 0 && LINE_HEIGHT != 0) {
             // use react-native API to retrieve effectiveLineHeight
             int effectiveLineHeight = LINE_HEIGHT;
-            // same implementation used in jetpack compose see https://tinyurl.com/mtmev3nj
             Spannable dummyString = new SpannableString("\u200B");
             dummyString.setSpan(new CustomLineHeightSpan(effectiveLineHeight), 0, dummyString.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
 
@@ -117,6 +115,8 @@ public class CustomEditText extends EditText {
                             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                             .setLineSpacing(0.f, 1.f)
                             .setIncludePad(getIncludeFontPadding()).build();
+            // react-native under the hood the same API (ShadowNodes) to measure views
+            // see https://tinyurl.com/4ah4d8dp and https://tinyurl.com/ywxcurzb
             super.onMeasure(widthMeasureSpec, layout.getHeight());
             setMeasuredDimension(getMeasuredWidth(), layout.getHeight());
         } else {
@@ -134,7 +134,7 @@ public class CustomEditText extends EditText {
         textPaint.drawableState = getDrawableState();
 
         canvas.save();
-        // TODO - Add logic onFocus/onBlur to remove the cursor
+        // TODO - Add logic onFocus/onBlur to remove the cursor when not focused
         if ((getText().length() > 0) || (LINE_HEIGHT == 0)) {
             setCursorVisible(true);
         } else if (blinkShouldBeOn()) {
@@ -147,15 +147,6 @@ public class CustomEditText extends EditText {
             canvas.drawLine(0, 0, 0, LINE_HEIGHT, cursorPaint);
         }
         canvas.restore();
-    }
-
-    public void showCursor(boolean visible) {
-        mCursorIsVisible = visible;
-        this.invalidate();
-    }
-
-    public void setCursorColor(int color) {
-        cursorPaint.setColor(color);
     }
 
     private boolean blinkShouldBeOn() {
