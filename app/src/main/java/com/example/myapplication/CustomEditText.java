@@ -5,13 +5,13 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.Rect;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Layout;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -20,164 +20,103 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.lang.ref.WeakReference;
 
 @SuppressLint("AppCompatCustomView")
 public class CustomEditText extends EditText {
-    private static final String TAG = "CustomEditText";
-    private boolean mUpdatingText;
-    private StaticLayout mStaticLayout = null;
-    private TextPaint mTextPaint;
-    // private String mText = "\u200b";
-    private String mText = "X";
 
-    public CustomEditText(Context context) {
-        super(context);
-        addTextChangedListener(new TextWatcherDelegator());
-        setInitialState();
+    private static final String TAG = "MongolTextView";
+    private TextPaint textPaint;
+    private Paint cursorPaint = new Paint();
+    private boolean mCursorIsVisible;
+    private CursorTouchLocationListener listener;
+
+    // Naming is based on pre-rotated/mirrored values
+    private float mCursorBaseY;
+    private float mCursorBottomY;
+    private float mCursorAscentY; // This is a negative number
+    private float mCursorX;
+
+    private static final float CURSOR_THICKNESS = 7f;
+    private int mCursorHeightY;
+    private boolean mUpdatingText = false;
+    private boolean mCursorVisible = true;
+    private long mShowCursor;
+    private Blink mBlink;
+    private int BLINK = 500;
+    private int LINE_HEIGHT;
+
+    // Constructors
+    public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
+        init();
     }
 
     public CustomEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
-        addTextChangedListener(new TextWatcherDelegator());
-        setInitialState();
+        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
+        init();
     }
 
-    public CustomEditText(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        addTextChangedListener(new TextWatcherDelegator());
-        setInitialState();
+    public CustomEditText(Context context) {
+        super(context);
+        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
+        init();
     }
 
-    public CustomEditText(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        addTextChangedListener(new TextWatcherDelegator());
-        setInitialState();
+    // This class requires the mirrored Mongolian font to be in the assets/fonts folder
+    private void init() {
+
+        LINE_HEIGHT = 300;
+        Spannable span = (Spannable) getText();
+        span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        setText(span, BufferType.SPANNABLE);
+        this.mCursorIsVisible = true;
+
+        cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
+        cursorPaint.setColor(Color.parseColor("#03DAC5"));
+        // TODO should be same as text color
+        // setTextCursorDrawable(R.drawable.cursor_default);
     }
 
-    private void setInitialState() {
-        mTextPaint = new TextPaint();
-        mTextPaint.setAntiAlias(true);
-        mTextPaint.setTextSize(16 * getResources().getDisplayMetrics().density);
-        mTextPaint.setColor(0xFF000000);
+    // This interface may be deleted if touch functionality is not needed
+    public interface CursorTouchLocationListener {
 
-        // default to a single line of text
-        int width = (int) mTextPaint.measureText(mText);
-        mStaticLayout = new StaticLayout(mText, mTextPaint, (int) width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
-
-        // New API alternate
-        //
-        // StaticLayout.Builder builder = StaticLayout.Builder.obtain(mText, 0, mText.length(), mTextPaint, width)
-        //        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-        //        .setLineSpacing(0, 1) // add, multiplier
-        //        .setIncludePad(false);
-        // mStaticLayout = builder.build();
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        // Tell the parent layout how big this view would like to be
-        // but still respect any requirements (measure specs) that are passed down.
-
-        // determine the width
-        int width;
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int widthRequirement = MeasureSpec.getSize(widthMeasureSpec);
-        if (widthMode == MeasureSpec.EXACTLY) {
-            width = widthRequirement;
-        } else {
-            width = mStaticLayout.getWidth() + getPaddingLeft() + getPaddingRight();
-            if (widthMode == MeasureSpec.AT_MOST) {
-                if (width > widthRequirement) {
-                    width = widthRequirement;
-                    // too long for a single line so relayout as multiline
-                    mStaticLayout = new StaticLayout(mText, mTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
-                }
-            }
-        }
-
-        // determine the height
-        int height;
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int heightRequirement = MeasureSpec.getSize(heightMeasureSpec);
-        if (heightMode == MeasureSpec.EXACTLY) {
-            height = heightRequirement;
-        } else {
-            height = mStaticLayout.getHeight() + getPaddingTop() + getPaddingBottom();
-            if (heightMode == MeasureSpec.AT_MOST) {
-                height = Math.min(height, heightRequirement);
-            }
-        }
-
-        // Required call: set width and height
-        setMeasuredDimension(width, height);
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        // super.onDraw(canvas);
-        // https://stackoverflow.com/a/6017003/7295772
-        if (getText().length() == 0) {
-            Paint paint = new Paint();
-            Path path = new Path();
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.TRANSPARENT);
-            canvas.drawPaint(paint);
-            for (int i = 50; i < 100; i++) {
-                path.moveTo(i, i-1);
-                path.lineTo(i, i);
-            }
-            path.close();
-            paint.setStrokeWidth(30);
-            paint.setPathEffect(null);
-            paint.setColor(Color.BLACK);
-            paint.setStyle(Paint.Style.STROKE);
-            canvas.drawPath(path, paint);
-            Path highlightPath = new Path();
-            // highlightPath.moveTo(0,100);
-            highlightPath.lineTo(500, 0);
-            highlightPath.close();
-            getLayout().getCursorPath(0, highlightPath, getText());
-            // Paint paint = new Paint();
-            paint.setColor(Color.BLUE);
-
-            // do as little as possible inside onDraw to improve performance
-
-            // draw the text on the canvas after adjusting for padding
-            canvas.save();
-            canvas.translate(getPaddingLeft(), getPaddingTop() + 500);
-            getLayout().draw(canvas, highlightPath, paint, 0);
-            // mStaticLayout.draw(canvas);
-            canvas.restore();
-        } else {
-            // getLayout().draw(canvas);
-            super.onDraw(canvas);
-        }
+        /**
+         * Returns the touch location to be used for the cursor so you can update the insert location in
+         * a text string.
+         *
+         * @param glyphIndex You will need to translate glyphIndex into a Unicode index if you are using
+         *     a Unicode string.
+         */
+        public void onCursorTouchLocationChanged(int glyphIndex);
     }
 
     private void maybeSetText(CharSequence s) {
-        // Spannable span = (Spannable)getText();
-        requestLayout();
-        invalidate();
-        if (s.length() == 0) {
-            // setInitialState();
-        } else {
-            // span.setSpan(new CustomLineHeightSpan(300), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-        }
+        mUpdatingText = true;
+        mUpdatingText = false;
     }
 
-        private class TextWatcherDelegator implements TextWatcher {
+    private class TextWatcherDelegator implements TextWatcher {
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            Log.w(
-                    TAG, "beforeTextChanged ==> s: " + s + " start: " + start + "count: " + count);
+            Log.w(TAG, "beforeTextChanged ==> s: " + s + " start: " + start + "count: " + count);
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             Log.w(
-                    TAG, "onTextChanged ==> s: " + s + " start: " + start + " before: " + before + " count: " + count);
+                    TAG,
+                    "onTextChanged ==> s: "
+                            + s
+                            + " start: "
+                            + start
+                            + " before: "
+                            + before
+                            + " count: "
+                            + count);
             if (!mUpdatingText) {
                 maybeSetText(s);
             }
@@ -185,8 +124,225 @@ public class CustomEditText extends EditText {
 
         @Override
         public void afterTextChanged(Editable s) {
-            Log.w(
-                    TAG, "afterTextChanged ==> s: " + s);
+            Log.w(TAG, "afterTextChanged ==> s: " + s);
+        }
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (getText().length() == 0) {
+            super.onMeasure(widthMeasureSpec, 300);
+            setMeasuredDimension(getMeasuredWidth(), 300);
+        } else {
+            super.onMeasure(widthMeasureSpec, getMeasuredHeight());
+            setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
+        }
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        textPaint = getPaint();
+        Paint.FontMetricsInt fontMetricsInt = textPaint.getFontMetricsInt();
+        textPaint.setColor(getCurrentTextColor());
+        textPaint.drawableState = getDrawableState();
+        int fontSizeLineHeight = fontMetricsInt.descent - fontMetricsInt.ascent;
+
+        canvas.save();
+        // height of the view / 2 - fontSizeLineHeight
+        // canvas.translate(0,  178 - fontSizeLineHeight);
+        if ((getText().length() > 1) || (LINE_HEIGHT == 0)) {
+            setCursorVisible(true);
+        } else if (blinkShouldBeOn()) {
+            setCursorVisible(false);
+
+            setCursorLocation(getText().length());
+            canvas.drawLine(mCursorX, 0, mCursorX, LINE_HEIGHT, cursorPaint);
+        }
+        canvas.restore();
+    }
+
+    public void showCursor(boolean visible) {
+        mCursorIsVisible = visible;
+        this.invalidate();
+        // TODO make the cursor blink
+    }
+
+    public void setCursorColor(int color) {
+        cursorPaint.setColor(color);
+    }
+
+    private boolean blinkShouldBeOn() {
+        //noinspection SimplifiableIfStatement
+        if (!mCursorVisible || !isFocused()) return false;
+        return (SystemClock.uptimeMillis() - mShowCursor) % (2 * BLINK) < BLINK;
+    }
+
+    @Override
+    protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
+        mShowCursor = SystemClock.uptimeMillis();
+        if (focused) {
+            makeBlink();
+        }
+        super.onFocusChanged(focused, direction, previouslyFocusedRect);
+    }
+
+    private void invalidateCursorPath() {
+        int start = getSelectionStart();
+        if (start < 0) return;
+        // Rect cursorPath = getCursorPath(start);
+        // invalidate(cursorPath.left, cursorPath.top, cursorPath.right, cursorPath.bottom);
+        invalidate();
+    }
+
+    private void makeBlink() {
+        if (!mCursorVisible) {
+            if (mBlink != null) {
+                mBlink.removeCallbacks(mBlink);
+            }
+
+            return;
+        }
+
+        if (mBlink == null) mBlink = new Blink(this);
+
+        mBlink.removeCallbacks(mBlink);
+        mBlink.postAtTime(mBlink, mShowCursor + BLINK);
+    }
+
+    public void setCursorLocation(int characterOffset) {
+
+        Layout layout = this.getLayout();
+
+        if (layout != null) {
+
+            try {
+                // This method is giving a lot of crashes so just surrounding with
+                // try catch for now
+                mCursorX = layout.getPrimaryHorizontal(characterOffset);
+                if (getText().length() > 0 && blinkShouldBeOn()) {
+                    int line = layout.getLineForOffset(characterOffset);
+                    mCursorBaseY = layout.getLineBaseline(line);
+                    mCursorBottomY = layout.getLineBottom(line);
+                    mCursorAscentY = layout.getLineAscent(line);
+                    Log.w(
+                            TAG,
+                            "mCursorX: "
+                                    + mCursorX
+                                    + " mCursorBaseY: "
+                                    + mCursorBaseY
+                                    + " mCursorBottomY: "
+                                    + mCursorBottomY
+                                    + " mCursorAscentY: "
+                                    + mCursorAscentY);
+
+                    this.invalidate();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class InputWindowTouchListener implements OnTouchListener {
+        @Override
+        public boolean onTouch(View view, MotionEvent event) {
+
+            Layout layout = ((TextView) view).getLayout();
+
+            // swapping x and y for touch events
+            int y = (int) event.getX();
+            int x = (int) event.getY();
+            setCursorLocation(getText().length());
+            if (layout != null) {
+
+                if (getText().length() != 0) {
+                    int line = layout.getLineForVertical(y);
+                    int offset = layout.getOffsetForHorizontal(line, x);
+
+                    mCursorX = layout.getPrimaryHorizontal(offset);
+                    mCursorBaseY = layout.getLineBaseline(line);
+                    mCursorBottomY = layout.getLineBottom(line);
+                    mCursorAscentY = layout.getLineAscent(line);
+                    mCursorHeightY = layout.getLineTop(line);
+                    Log.w(
+                            TAG,
+                            "mCursorX: "
+                                    + mCursorX
+                                    + " mCursorBaseY: "
+                                    + mCursorBaseY
+                                    + " mCursorBottomY: "
+                                    + mCursorBottomY
+                                    + " mCursorAscentY: "
+                                    + mCursorAscentY
+                                    + " mCursorHeightY: "
+                                    + mCursorHeightY);
+
+                    view.invalidate();
+
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            // handler.postDelayed(mLongPressed, 1000);
+                            listener.onCursorTouchLocationChanged(offset);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                            // handler.removeCallbacks(mLongPressed);
+                            // notify the host activity of the new cursor location
+
+                            break;
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public void setCursorTouchLocationListener(CursorTouchLocationListener listener) {
+        this.listener = listener;
+    }
+
+    private static class Blink extends Handler implements Runnable {
+        private WeakReference<CustomEditText> mView;
+        private boolean mCancelled;
+        private long BLINK;
+
+        Blink(CustomEditText v) {
+            mView = new WeakReference<>(v);
+        }
+
+        public void run() {
+            if (mCancelled) {
+                return;
+            }
+
+            removeCallbacks(Blink.this);
+
+            CustomEditText met = mView.get();
+
+            if (met != null && met.isFocused()) {
+                int st = met.getSelectionStart();
+                int en = met.getSelectionEnd();
+
+                if (st == en && st >= 0 && en >= 0) {
+                    if (met.getLayout() != null) {
+                        met.invalidateCursorPath();
+                    }
+
+                    postAtTime(this, SystemClock.uptimeMillis() + BLINK);
+                }
+            }
+        }
+
+        void cancel() {
+            if (!mCancelled) {
+                removeCallbacks(Blink.this);
+                mCancelled = true;
+            }
+        }
+
+        void uncancel() {
+            mCancelled = false;
         }
     }
 }

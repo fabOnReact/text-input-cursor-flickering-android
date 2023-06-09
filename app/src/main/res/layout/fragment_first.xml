@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".FirstFragment">
 
-    <com.example.myapplication.MongolTextView
+    <com.example.myapplication.CustomEditText
         android:text=""
         android:id="@+id/edit_text"
         android:layout_height="wrap_content"
