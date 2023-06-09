@@ -129,7 +129,6 @@ public class CustomEditText extends EditText {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         textPaint = getPaint();
-        Paint.FontMetricsInt fontMetricsInt = textPaint.getFontMetricsInt();
         textPaint.setColor(getCurrentTextColor());
         textPaint.drawableState = getDrawableState();
 
