@@ -15,11 +15,6 @@ public class CustomLineHeightSpan implements LineHeightSpan {
         this.mHeight = (int) Math.ceil(height);
     }
 
-    public CustomLineHeightSpan(float height, boolean align) {
-        this.mHeight = (int) Math.ceil(height);
-        this.mAlign = align;
-    }
-
     public int getLineHeight() {
         return mHeight;
     }
@@ -31,6 +26,7 @@ public class CustomLineHeightSpan implements LineHeightSpan {
         // FontMetrics mean here: http://stackoverflow.com/questions/27631736.
         // The general solution is that if there's not enough height to show the full line height, we
         // will prioritize in this order: descent, ascent, bottom, top
+
 
         if (fm.descent > mHeight) {
             // Show as much descent as possible
@@ -58,5 +54,6 @@ public class CustomLineHeightSpan implements LineHeightSpan {
             fm.ascent = fm.top;
             fm.descent = fm.bottom;
         }
+
     }
 }

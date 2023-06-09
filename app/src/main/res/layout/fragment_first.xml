@@ -12,5 +12,6 @@
         android:id="@+id/edit_text"
         android:layout_height="fill_parent"
         android:layout_width="fill_parent"
+        android:textSelectHandle="@android:color/holo_blue_light"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>

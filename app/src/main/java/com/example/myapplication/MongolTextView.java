@@ -7,17 +7,24 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.text.Editable;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import java.lang.ref.WeakReference;
 
 @SuppressLint("AppCompatCustomView")
 public class MongolTextView extends EditText {
@@ -36,20 +43,28 @@ public class MongolTextView extends EditText {
 
     private static final float CURSOR_THICKNESS = 5f;
     private int mCursorHeightY;
+    private boolean mUpdatingText = false;
+    private boolean mCursorVisible = true;
+    private long mShowCursor;
+    private Blink mBlink;
+    private int BLINK = 500;
 
     // Constructors
     public MongolTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        addTextChangedListener(new MongolTextView.TextWatcherDelegator());
         init();
     }
 
     public MongolTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        addTextChangedListener(new MongolTextView.TextWatcherDelegator());
         init();
     }
 
     public MongolTextView(Context context) {
         super(context);
+        addTextChangedListener(new MongolTextView.TextWatcherDelegator());
         init();
     }
 
@@ -63,7 +78,7 @@ public class MongolTextView extends EditText {
 
         cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
         cursorPaint.setColor(Color.parseColor("#03DAC5")); // TODO should be same as text color
-
+        // setTextCursorDrawable(R.drawable.cursor_default);
     }
 
     // This interface may be deleted if touch functionality is not needed
@@ -80,6 +95,35 @@ public class MongolTextView extends EditText {
 
     }
 
+    private void maybeSetText(CharSequence s) {
+        mUpdatingText = true;
+        mUpdatingText = false;
+    }
+
+    private class TextWatcherDelegator implements TextWatcher {
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            Log.w(
+                    TAG, "beforeTextChanged ==> s: " + s + " start: " + start + "count: " + count);
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            Log.w(
+                    TAG, "onTextChanged ==> s: " + s + " start: " + start + " before: " + before + " count: " + count);
+            if (!mUpdatingText) {
+                maybeSetText(s);
+            }
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            Log.w(
+                    TAG, "afterTextChanged ==> s: " + s);
+        }
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // swap the height and width
@@ -90,73 +134,29 @@ public class MongolTextView extends EditText {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
         textPaint = getPaint();
         textPaint.setColor(getCurrentTextColor());
         textPaint.drawableState = getDrawableState();
 
         canvas.save();
-        // if (getText().length() < 4) {
-            // canvas.translate(0,  500);
+        // canvas.translate(0,  500);
+        if (getText().length() > 1){
+            setCursorVisible(true);
+        } else if (blinkShouldBeOn()){
+            setCursorVisible(false);
 
-            // draw the cursor
-            if (mCursorIsVisible) {
-                setCursorLocation(getText().length());
-                canvas.drawLine(mCursorX, mCursorBottomY, mCursorX, mCursorBaseY + mCursorAscentY,
-                  cursorPaint);
-                // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f,
-                //       cursorPaint);
-                // canvas.drawLine(0.0f, 300.0f, 0.0f, 170.0f + -170.0f, cursorPaint);
-                // canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
-                // canvas.drawRect(getCursorPath(2), cursorPaint);
-            }
-
-        // } else {
-            // super.onDraw(canvas);
-            //canvas.drawLine(10.0f, 330.0f, 10.0f, 25f, cursorPaint);
-        // }
-
-        getLayout().draw(canvas);
+            // if (mCursorIsVisible) {
+            setCursorLocation(getText().length());
+            canvas.drawLine(mCursorX + 10.0f,
+                    mCursorBottomY + 30.0f,
+                    mCursorX + 10.0f,
+                    mCursorBaseY + mCursorAscentY + 30f,
+                    cursorPaint);
+            // }
+        }
         canvas.restore();
     }
-
-  /*
-    private Rect getCursorPath(int cursorLocation) {
-        int line = getLayout().getLineForOffset(cursorLocation);
-        int width = getLayout().getLineDescent(line) - getLayout().getLineAscent(line);
-        int x = getLayout().getLineBottom(line) + getPaddingLeft();
-        int y = (int) getLayout().getVertical(cursorLocation) + getPaddingTop();
-
-        int cursorWidthPX = (int) (CURSOR_THICKNESS * getResources().getDisplayMetrics().density);
-        return new Rect(x, y, x + width, y + cursorWidthPX);
-    }
-
-
-    public int getLineForOffset(int offset) {
-        int high = getLineCount();
-        int low = -1;
-        int guess;
-
-        while (high - low > 1) {
-            guess = (high + low) / 2;
-
-            if (getLineStart(guess) > offset)
-                high = guess;
-            else
-                low = guess;
-        }
-
-        if (low < 0)
-            return 0;
-        else
-            return low;
-    }
-
-
-    public final int getLineStart(int line) {
-        if (mLinesInfo == null || mLinesInfo.size() == 0) return 0;
-        return mLinesInfo.get(line).startOffset;
-    }
-     */
 
     public void showCursor(boolean visible) {
         mCursorIsVisible = visible;
@@ -166,6 +166,48 @@ public class MongolTextView extends EditText {
 
     public void setCursorColor(int color) {
         cursorPaint.setColor(color);
+    }
+
+    private boolean blinkShouldBeOn() {
+        //noinspection SimplifiableIfStatement
+        if (!mCursorVisible || !isFocused()) return false;
+        return (SystemClock.uptimeMillis() - mShowCursor) % (2 * BLINK) < BLINK;
+    }
+
+    @Override
+    protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
+        mShowCursor = SystemClock.uptimeMillis();
+        if (focused) {
+            makeBlink();
+        }
+        super.onFocusChanged(focused, direction, previouslyFocusedRect);
+    }
+
+    private void invalidateCursorPath() {
+        int start = getSelectionStart();
+        if (start < 0) return;
+        // Rect cursorPath = getCursorPath(start);
+        // invalidate(cursorPath.left, cursorPath.top, cursorPath.right, cursorPath.bottom);
+        invalidate();
+    }
+
+    private void makeBlink() {
+        if (!mCursorVisible) {
+            if (mBlink != null) {
+                mBlink.removeCallbacks(mBlink);
+            }
+
+
+            return;
+        }
+
+
+        if (mBlink == null)
+            mBlink = new Blink(this);
+
+
+        mBlink.removeCallbacks(mBlink);
+        mBlink.postAtTime(mBlink, mShowCursor + BLINK);
     }
 
     public void setCursorLocation(int characterOffset) {
@@ -178,7 +220,7 @@ public class MongolTextView extends EditText {
                 // This method is giving a lot of crashes so just surrounding with
                 // try catch for now
                 mCursorX = layout.getPrimaryHorizontal(characterOffset);
-                if (getText().length() > 0) {
+                if (getText().length() > 0 && blinkShouldBeOn()) {
                     int line = layout.getLineForOffset(characterOffset);
                     mCursorBaseY = layout.getLineBaseline(line);
                     mCursorBottomY = layout.getLineBottom(line);
@@ -249,5 +291,58 @@ public class MongolTextView extends EditText {
 
     public void setCursorTouchLocationListener(CursorTouchLocationListener listener) {
         this.listener = listener;
+    }
+
+    private static class Blink extends Handler implements Runnable {
+        private WeakReference<MongolTextView> mView;
+        private boolean mCancelled;
+        private long BLINK;
+
+
+        Blink(MongolTextView v) {
+            mView = new WeakReference<>(v);
+        }
+
+
+        public void run() {
+            if (mCancelled) {
+                return;
+            }
+
+
+            removeCallbacks(Blink.this);
+
+
+            MongolTextView met = mView.get();
+
+
+            if (met != null && met.isFocused()) {
+                int st = met.getSelectionStart();
+                int en = met.getSelectionEnd();
+
+
+                if (st == en && st >= 0 && en >= 0) {
+                    if (met.getLayout() != null) {
+                        met.invalidateCursorPath();
+                    }
+
+
+                    postAtTime(this, SystemClock.uptimeMillis() + BLINK);
+                }
+            }
+        }
+
+
+        void cancel() {
+            if (!mCancelled) {
+                removeCallbacks(Blink.this);
+                mCancelled = true;
+            }
+        }
+
+
+        void uncancel() {
+            mCancelled = false;
+        }
     }
 }
