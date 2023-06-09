@@ -44,7 +44,10 @@ public class CustomEditText extends EditText {
     private long mShowCursor;
     private Blink mBlink;
     private int BLINK = 500;
+    // REACT NATIVE passes this props as lineHeight
     private int LINE_HEIGHT;
+    // REACT NATIVE passes this props as cursorColor
+    private String CURSOR_COLOR = "#03DAC5";
 
     // Constructors
     public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
@@ -65,9 +68,7 @@ public class CustomEditText extends EditText {
         init();
     }
 
-    // This class requires the mirrored Mongolian font to be in the assets/fonts folder
     private void init() {
-
         LINE_HEIGHT = 300;
         Spannable span = (Spannable) getText();
         span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
@@ -75,9 +76,8 @@ public class CustomEditText extends EditText {
         this.mCursorIsVisible = true;
 
         cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
-        cursorPaint.setColor(Color.parseColor("#03DAC5"));
         // TODO should be same as text color
-        // setTextCursorDrawable(R.drawable.cursor_default);
+        cursorPaint.setColor(Color.parseColor(CURSOR_COLOR));
     }
 
     // This interface may be deleted if touch functionality is not needed
@@ -131,8 +131,8 @@ public class CustomEditText extends EditText {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (getText().length() == 0) {
-            super.onMeasure(widthMeasureSpec, 300);
-            setMeasuredDimension(getMeasuredWidth(), 300);
+            super.onMeasure(widthMeasureSpec, LINE_HEIGHT);
+            setMeasuredDimension(getMeasuredWidth(), LINE_HEIGHT);
         } else {
             super.onMeasure(widthMeasureSpec, getMeasuredHeight());
             setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
