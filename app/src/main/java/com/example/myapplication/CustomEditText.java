@@ -16,6 +16,7 @@ import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextWatcher;
+import android.text.style.AbsoluteSizeSpan;
 import android.util.AttributeSet;
 import android.widget.EditText;
 import java.lang.ref.WeakReference;
@@ -62,9 +63,10 @@ public class CustomEditText extends EditText {
     }
 
     private void init() {
-        LINE_HEIGHT = 300;
+        LINE_HEIGHT = 500;
         Spannable span = (Spannable) getText();
         span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+        // span.setSpan(new AbsoluteSizeSpan(20), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         setText(span, BufferType.SPANNABLE);
 
         cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
@@ -74,6 +76,14 @@ public class CustomEditText extends EditText {
 
     private void maybeSetText(CharSequence s) {
         mUpdatingText = true;
+        if (getText().length() == 0) {
+            setTextSize(140);
+        } else {
+            setTextSize(50);
+            Spannable span = (Spannable) getText();
+            span.setSpan(new AbsoluteSizeSpan(25), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            setText(span, BufferType.SPANNABLE);
+        }
         // do nothing for now, it is part of react-native implementation
         mUpdatingText = false;
     }
@@ -100,6 +110,7 @@ public class CustomEditText extends EditText {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         // I will complete this later. This implementation is just for testing the cursor flickering
         if (getText().length() == 0 && LINE_HEIGHT != 0) {
             // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
