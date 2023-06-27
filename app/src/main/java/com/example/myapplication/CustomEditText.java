@@ -31,8 +31,6 @@ import java.lang.ref.WeakReference;
 public class CustomEditText extends EditText {
 
     private static final String TAG = "CustomEditText";
-    private int LINE_HEIGHT = 500;
-    private boolean mUpdatingText = false;
 
     // Constructors
     public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
@@ -45,13 +43,6 @@ public class CustomEditText extends EditText {
 
     public CustomEditText(Context context) {
         super(context);
-    }
-
-    private void init() {
-        LINE_HEIGHT = 500;
-        Spannable span = (Spannable) getText();
-        span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-        setText(span, BufferType.SPANNABLE);
     }
 
     @Override
