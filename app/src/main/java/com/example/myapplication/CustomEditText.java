@@ -1,11 +1,14 @@
 package com.example.myapplication;
 
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
@@ -19,227 +22,73 @@ import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.AttributeSet;
 import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+
 import java.lang.ref.WeakReference;
 
 @SuppressLint("AppCompatCustomView")
 public class CustomEditText extends EditText {
 
     private static final String TAG = "CustomEditText";
-    private TextPaint textPaint;
-    private Paint cursorPaint = new Paint();
-
-
-    private static final float CURSOR_THICKNESS = 7f;
+    private int LINE_HEIGHT = 500;
     private boolean mUpdatingText = false;
-
-    // TODO - add logic to change this to true/false onFocus/onBlur
-    private boolean mCursorVisible = true;
-    private long mShowCursor;
-    private Blink mBlink;
-    private int BLINK = 500;
-    // REACT NATIVE passes this props as lineHeight
-    private int LINE_HEIGHT;
-    // REACT NATIVE passes this props as cursorColor
-    private String CURSOR_COLOR = "#03DAC5";
-    private boolean mCursorIsVisible;
 
     // Constructors
     public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
-        init();
     }
 
     public CustomEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
-        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
-        init();
     }
 
     public CustomEditText(Context context) {
         super(context);
-        addTextChangedListener(new CustomEditText.TextWatcherDelegator());
-        init();
     }
 
     private void init() {
         LINE_HEIGHT = 500;
         Spannable span = (Spannable) getText();
         span.setSpan(new CustomLineHeightSpan(LINE_HEIGHT), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-        // span.setSpan(new AbsoluteSizeSpan(20), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
         setText(span, BufferType.SPANNABLE);
-
-        cursorPaint.setStrokeWidth(CURSOR_THICKNESS);
-        // TODO should be same as the TextInput cursorColor sent from React-Native
-        cursorPaint.setColor(Color.parseColor(CURSOR_COLOR));
-    }
-
-    private void maybeSetText(CharSequence s) {
-        mUpdatingText = true;
-        if (getText().length() == 0) {
-            setTextSize(140);
-        } else {
-            setTextSize(50);
-            Spannable span = (Spannable) getText();
-            span.setSpan(new AbsoluteSizeSpan(25), 0, span.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-            setText(span, BufferType.SPANNABLE);
-        }
-        // do nothing for now, it is part of react-native implementation
-        mUpdatingText = false;
-    }
-
-    private class TextWatcherDelegator implements TextWatcher {
-
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            // do nothing
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            if (!mUpdatingText) {
-                maybeSetText(s);
-            }
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-            // do nothing
-        }
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        // I will complete this later. This implementation is just for testing the cursor flickering
-        if (getText().length() == 0 && LINE_HEIGHT != 0) {
-            // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
-            // we implement the same solution from jetpack compose https://tinyurl.com/mtmev3nj and https://tinyurl.com/43vx2pr2
-            // we measure a dummy string with a zero-width-character because StaticLayout.generate does not
-            // measure LineHeightSpan in empty strings
-
-            // use react-native API to retrieve effectiveLineHeight
-            int effectiveLineHeight = LINE_HEIGHT;
-            Spannable dummyString = new SpannableString("\u200B");
-            dummyString.setSpan(new CustomLineHeightSpan(effectiveLineHeight), 0, dummyString.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-
-            Layout layout =
-                    StaticLayout.Builder.obtain(dummyString, 0, dummyString.length(), getPaint(), (int) widthMeasureSpec)
-                            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                            .setLineSpacing(0.f, 1.f)
-                            .setIncludePad(getIncludeFontPadding()).build();
-            // react-native under the hood the same API (ShadowNodes) to measure views
-            // see https://tinyurl.com/4ah4d8dp and https://tinyurl.com/ywxcurzb
-            super.onMeasure(widthMeasureSpec, layout.getHeight());
-            setMeasuredDimension(getMeasuredWidth(), layout.getHeight());
-        } else {
-            super.onMeasure(widthMeasureSpec, getMeasuredHeight());
-            setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());
-        }
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        textPaint = getPaint();
-        textPaint.setColor(getCurrentTextColor());
-        textPaint.drawableState = getDrawableState();
-
-        canvas.save();
-        // TODO - Add logic onFocus/onBlur to remove the cursor when not focused
-        if ((getText().length() > 0) || (LINE_HEIGHT == 0)) {
-            setCursorVisible(true);
-        } else if (blinkShouldBeOn()) {
-            // we draw the cursor with drawLine instead of using default cursor
-            // to fix an issue with android reported in https://issuetracker.google.com/issues/236615813
-            // the solution is the same used on jetpack compose
-            // which consist of modify measure to calculate the correct height
-            // and manually drawing the cursor
-            setCursorVisible(false);
-            canvas.drawLine(0, 0, 0, LINE_HEIGHT, cursorPaint);
-        }
-        canvas.restore();
-    }
-
-    private boolean blinkShouldBeOn() {
-        //noinspection SimplifiableIfStatement
-        if (!mCursorVisible || !isFocused()) return false;
-        return (SystemClock.uptimeMillis() - mShowCursor) % (2 * BLINK) < BLINK;
-    }
-
-    @Override
-    protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
-        mShowCursor = SystemClock.uptimeMillis();
-        if (focused) {
-            makeBlink();
-        }
-        super.onFocusChanged(focused, direction, previouslyFocusedRect);
-    }
-
-    private void invalidateCursorPath() {
-        int start = getSelectionStart();
-        if (start < 0) return;
-        // Rect cursorPath = getCursorPath(start);
-        // invalidate(cursorPath.left, cursorPath.top, cursorPath.right, cursorPath.bottom);
-        invalidate();
-    }
-
-    private void makeBlink() {
-        if (!mCursorVisible) {
-            if (mBlink != null) {
-                mBlink.removeCallbacks(mBlink);
+    public boolean onTextContextMenuItem(int id) {
+        if (id == android.R.id.paste) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                id = android.R.id.pasteAsPlainText;
+            } else {
+                onInterceptClipDataToPlainText();
             }
-
-            return;
         }
-
-        if (mBlink == null) mBlink = new Blink(this);
-
-        mBlink.removeCallbacks(mBlink);
-        mBlink.postAtTime(mBlink, mShowCursor + BLINK);
+        return super.onTextContextMenuItem(id);
     }
 
-    private static class Blink extends Handler implements Runnable {
-        private WeakReference<CustomEditText> mView;
-        private boolean mCancelled;
-        private long BLINK;
-
-        Blink(CustomEditText v) {
-            mView = new WeakReference<>(v);
-        }
-
-        public void run() {
-            if (mCancelled) {
-                return;
-            }
-
-            removeCallbacks(Blink.this);
-
-            CustomEditText met = mView.get();
-
-            if (met != null && met.isFocused()) {
-                int st = met.getSelectionStart();
-                int en = met.getSelectionEnd();
-
-                if (st == en && st >= 0 && en >= 0) {
-                    if (met.getLayout() != null) {
-                        met.invalidateCursorPath();
-                    }
-
-                    postAtTime(this, SystemClock.uptimeMillis() + BLINK);
+    private void onInterceptClipDataToPlainText() {
+        ClipboardManager clipboard = (ClipboardManager) getContext()
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = clipboard.getPrimaryClip();
+        if (clip != null) {
+            for (int i = 0; i < clip.getItemCount(); i++) {
+                final CharSequence paste;
+                // Get an item as text and remove all spans by toString().
+                final CharSequence text = clip.getItemAt(i).coerceToText(getContext());
+                paste = (text instanceof Spanned) ? text.toString() : text;
+                if (paste != null) {
+                    ClipBoards.copyToClipBoard(getContext(), paste);
                 }
             }
         }
+    }
+}
 
-        void cancel() {
-            if (!mCancelled) {
-                removeCallbacks(Blink.this);
-                mCancelled = true;
-            }
-        }
-
-        void uncancel() {
-            mCancelled = false;
-        }
+class ClipBoards {
+    public static void copyToClipBoard(@NonNull Context context, @NonNull CharSequence text) {
+        ClipData clipData = ClipData.newPlainText("rebase_copy", text);
+        ClipboardManager manager = (ClipboardManager) context
+                .getSystemService(Context.CLIPBOARD_SERVICE);
+        manager.setPrimaryClip(clipData);
     }
 }
