@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -13,6 +14,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Layout;
+import android.text.Selection;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -20,7 +22,13 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.CharacterStyle;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.ActionMode;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
@@ -31,18 +39,27 @@ import java.lang.ref.WeakReference;
 public class CustomEditText extends EditText {
 
     private static final String TAG = "CustomEditText";
+    private Object mTextActionMode;
 
     // Constructors
     public CustomEditText(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        setCustomContextMenu();
     }
 
     public CustomEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setCustomContextMenu();
     }
 
     public CustomEditText(Context context) {
         super(context);
+        setCustomContextMenu();
+    }
+
+    private void setCustomContextMenu() {
+        setCustomSelectionActionModeCallback(new CustomActionMode(TextActionMode.SELECTION));
+        setCustomInsertionActionModeCallback(new CustomActionMode(TextActionMode.INSERTION));
     }
 
     @Override
@@ -72,6 +89,39 @@ public class CustomEditText extends EditText {
                 }
             }
         }
+    }
+}
+
+@interface TextActionMode {
+    int SELECTION = 0;
+    int INSERTION = 1;
+    int TEXT_LINK = 2;
+}
+class CustomActionMode extends ActionMode.Callback2 {
+    CustomActionMode(int mode) {
+        super();
+    }
+
+    @Override
+    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+        menu.removeItem(android.R.id.pasteAsPlainText);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+        menu.removeItem(android.R.id.pasteAsPlainText);
+        return true;
+    }
+
+    @Override
+    public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+        return false;
+    }
+
+    @Override
+    public void onDestroyActionMode(ActionMode mode) {
+
     }
 }
 
