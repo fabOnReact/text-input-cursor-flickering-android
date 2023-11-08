@@ -1,20 +1,14 @@
-package com.example.myapplication;
+package com.example.javaexample;
 
-import android.graphics.Paint;
 import android.os.Bundle;
-import android.text.style.LineHeightSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Px;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 
-import com.example.myapplication.databinding.FragmentFirstBinding;
-import android.graphics.Paint;
-import android.text.style.LineHeightSpan;
+import com.example.javaexample.databinding.FragmentFirstBinding;
 
 public class FirstFragment extends Fragment {
 
