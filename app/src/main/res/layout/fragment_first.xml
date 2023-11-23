@@ -7,13 +7,13 @@
     android:layout_height="match_parent"
     tools:context=".FirstFragment">
 
-    <com.example.javaexample.CustomEditText
-        android:text="Text"
-        android:id="@+id/edit_text"
-        android:layout_height="wrap_content"
-        android:layout_width="fill_parent"
+    <com.example.javaexample.CustomTextView
+        android:text="From vincenzoddragon+five@gmail.com  From vincenzoddrlxagon+five@gmail.com"
+        android:id="@+id/text_view"
+        android:layout_height="18dp"
+        android:layout_width="0dp"
         android:background="#ffff99"
-        android:textSize="50px"
-        android:textSelectHandle="@android:color/holo_blue_light"
+        android:textSize="39.0px"
+        android:singleLine="true"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>
