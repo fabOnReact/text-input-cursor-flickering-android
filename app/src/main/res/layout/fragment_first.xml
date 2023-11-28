@@ -8,7 +8,7 @@
     tools:context=".FirstFragment">
 
     <com.example.javaexample.CustomTextView
-        android:text="From vincenzoddragon+five@gmail.com  From vincenzoddrlxagon+five@gmail.com"
+        android:text="From vincenzoddragon+five@gmail.com From vincenzoddragon+five@gmail.com"
         android:id="@+id/text_view"
         android:layout_height="18dp"
         android:layout_width="0dp"

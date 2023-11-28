@@ -41,39 +41,20 @@ public class CustomTextView extends TextView {
 
     // https://stackoverflow.com/a/12267248/7295772
     // https://stackoverflow.com/a/41779935/7295772
+    // https://stackoverflow.com/questions/12266899/onmeasure-custom-view-explanation
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // StaticLayout.Builder.obtain(getText(), 0, getText().length(), getPaint(), (int) toPixelFromDIP(widthMeasureSpec))
-        /*
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        ((Activity) getContext()).getWindowManager()
-                .getDefaultDisplay()
-                .getMetrics(displayMetrics);
-        int screenWidth = displayMetrics.widthPixels;
-        */
-
-        float dip = 360f;
+        float textWidth = getPaint().measureText(getText().toString());
+        float dip = 392f;
         Resources r = getResources();
-        float px = TypedValue.applyDimension(
+        float parentWidth = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 dip,
                 r.getDisplayMetrics()
         );
 
-        /*
-        int textWidth = (int) getPaint().measureText((String) getText());
-        StaticLayout.Builder builder =
-                StaticLayout.Builder.obtain(getText(), 0, getText().length(), getPaint(), (int) px)
-                        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                        .setLineSpacing(0.f, 1.f)
-                        .setIncludePad(true)
-                        .setBreakStrategy(LineBreaker.BREAK_STRATEGY_SIMPLE)
-                        .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NONE);
-        Layout layout = builder.build();
-        int lineWidth = (int) layout.getLineWidth(0);
-        Log.w("TESTING ", "screenWidth: " + screenWidth + "\n textWidth: " + textWidth + "\n lineWidth: " + lineWidth + "\n widthMeasureSpec: " + widthMeasureSpec);
-        */
-        Log.w("TESTING ", "px: " + px);
-        setMeasuredDimension((int) px, heightMeasureSpec);
+        Log.w("TESTING ", "textWidth: " + textWidth + " parentWidth: " + parentWidth);
+        float maxTextWidth = textWidth > parentWidth ? parentWidth : textWidth;
+        setMeasuredDimension((int) maxTextWidth, heightMeasureSpec);
     }
 }
