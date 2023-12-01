@@ -44,17 +44,25 @@ public class CustomTextView extends TextView {
     // https://stackoverflow.com/questions/12266899/onmeasure-custom-view-explanation
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        float textWidth = getPaint().measureText(getText().toString());
-        float dip = 392f;
-        Resources r = getResources();
-        float parentWidth = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                dip,
-                r.getDisplayMetrics()
-        );
+        int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
+        StaticLayout.Builder builder =
+                StaticLayout.Builder.obtain(getText(), 0, getText().length(), getPaint(), parentWidth)
+                        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                        .setLineSpacing(0.f, 1.f)
+                        .setIncludePad(true)
+                        .setBreakStrategy(LineBreaker.BREAK_STRATEGY_SIMPLE)
+                        .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
 
-        Log.w("TESTING ", "textWidth: " + textWidth + " parentWidth: " + parentWidth);
-        float maxTextWidth = textWidth > parentWidth ? parentWidth : textWidth;
-        setMeasuredDimension((int) maxTextWidth, heightMeasureSpec);
+        builder.setUseLineSpacingFromFallbacks(true);
+
+        StaticLayout layout = builder.build();
+
+        // this works with StaticLayout
+        int newWidth = (int) layout.getWidth();
+
+        // this does not work with StaticLayout and single line
+        // int newWidth = (int) layout.getLineWidth(0);
+
+        setMeasuredDimension( newWidth, heightMeasureSpec);
     }
 }
