@@ -15,5 +15,6 @@
         android:background="#ffff99"
         android:textSize="39.0px"
         android:singleLine="true"
+        android:breakStrategy="simple"
         />
 </androidx.constraintlayout.widget.ConstraintLayout>
