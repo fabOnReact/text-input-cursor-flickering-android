@@ -1,17 +1,11 @@
 package com.example.javaexample;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.text.LineBreaker;
 import android.text.Layout;
 import android.text.StaticLayout;
-import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.util.TypedValue;
 import android.widget.TextView;
 
 @SuppressLint("AppCompatCustomView")
@@ -44,14 +38,14 @@ public class CustomTextView extends TextView {
                         .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
         StaticLayout layout = builder.build();
 
+        // UNCOMMENT THIS LINE TO FIX THE ISSUE
         // this works with StaticLayout
-        int ellipsizedWidth = (int) layout.getEllipsizedWidth();
+        int newWidth = (int) layout.getEllipsizedWidth();
 
+        // UNCOMMENT THIS LINE TO REPRODUCE THE ISSUE
         // this does not work with StaticLayout and single line
-        int lineWidth = (int) layout.getLineWidth(0);
+        // int newWidth = (int) layout.getLineWidth(0);
 
-        Log.w("TESTING", " ellipsizedWidth: " + ellipsizedWidth + " lineWidth: " + lineWidth);
-
-        setMeasuredDimension(ellipsizedWidth, heightMeasureSpec);
+        setMeasuredDimension(newWidth, heightMeasureSpec);
     }
 }
