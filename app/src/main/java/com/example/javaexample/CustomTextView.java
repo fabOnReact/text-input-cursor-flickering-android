@@ -42,17 +42,16 @@ public class CustomTextView extends TextView {
                         .setIncludePad(true)
                         .setBreakStrategy(LineBreaker.BREAK_STRATEGY_SIMPLE)
                         .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
-
-        builder.setUseLineSpacingFromFallbacks(true);
-
         StaticLayout layout = builder.build();
 
         // this works with StaticLayout
-        int newWidth = (int) layout.getWidth();
+        int ellipsizedWidth = (int) layout.getEllipsizedWidth();
 
         // this does not work with StaticLayout and single line
-        // int newWidth = (int) layout.getLineWidth(0);
+        int lineWidth = (int) layout.getLineWidth(0);
 
-        setMeasuredDimension( newWidth, heightMeasureSpec);
+        Log.w("TESTING", " ellipsizedWidth: " + ellipsizedWidth + " lineWidth: " + lineWidth);
+
+        setMeasuredDimension(ellipsizedWidth, heightMeasureSpec);
     }
 }
