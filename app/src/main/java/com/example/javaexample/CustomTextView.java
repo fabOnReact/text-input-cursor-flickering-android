@@ -16,16 +16,6 @@ import android.widget.TextView;
 
 @SuppressLint("AppCompatCustomView")
 public class CustomTextView extends TextView {
-
-    private StaticLayout mStaticLayout;
-
-    public float toPixelFromDIP(float value) {
-        return TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics());
-    }
-
-    private static final String TAG = "CustomEditText";
-
     // Constructors
     public CustomTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
